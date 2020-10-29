@@ -535,6 +535,26 @@ in {
         '';
       };
 
+      secrets.kasFile = mkOption {
+        type = with types; nullOr path;
+        default = null;
+        description = ''
+          A file containing the secret used to configure the Kubernetes
+          Agent Server. If you change or lose this key, the KAS may be
+          compromised.
+
+          It is required even if you are not deploying the KAS.
+
+          Make sure the secret is an RSA private key in PEM format. You can
+          generate one with
+
+          openssl genrsa 2048
+
+          This should be a string, not a nix path, since nix paths are
+          copied into the world-readable nix store.
+        '';
+      };
+
       extraShellConfig = mkOption {
         type = types.attrs;
         default = {};
@@ -629,6 +649,10 @@ in {
       {
         assertion = cfg.secrets.jwsFile != null;
         message = "services.gitlab.secrets.jwsFile must be set!";
+      }
+      {
+        assertion = cfg.secrets.kasFile != null;
+        message = "services.gitlab.secrets.kasFile must be set!";
       }
     ];
 
@@ -928,9 +952,11 @@ in {
               export db="$(<'${cfg.secrets.dbFile}')"
               export otp="$(<'${cfg.secrets.otpFile}')"
               export jws="$(<'${cfg.secrets.jwsFile}')"
+              export kas="$(<'${cfg.secrets.kasFile}')"
               ${pkgs.jq}/bin/jq -n '{production: {secret_key_base: $ENV.secret,
                                                   otp_key_base: $ENV.otp,
                                                   db_key_base: $ENV.db,
+                                                  kas_key_base: $ENV.kas,
                                                   openid_connect_signing_key: $ENV.jws}}' \
                                 > '${cfg.statePath}/config/secrets.yml'
             )
