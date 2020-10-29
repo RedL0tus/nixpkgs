@@ -1,7 +1,7 @@
 { stdenv, lib, fetchurl, fetchFromGitLab, bundlerEnv
 , ruby, tzdata, git, nettools, nixosTests, nodejs
 , gitlabEnterprise ? false, callPackage, yarn
-, fixup_yarn_lock, replace
+, fixup_yarn_lock, replace, openssl
 }:
 
 let
@@ -26,6 +26,10 @@ let
         # discussion in nixpkgs #63056.
         grpc = x.grpc // {
           patches = [ ./fix-grpc-ar.patch ];
+          dontBuild = false;
+        };
+        openssl = x.openssl // {
+          buildInputs = [ openssl ];
           dontBuild = false;
         };
       };
