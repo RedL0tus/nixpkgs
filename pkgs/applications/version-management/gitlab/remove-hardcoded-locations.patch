@@ -1,8 +1,8 @@
 diff --git a/config/environments/production.rb b/config/environments/production.rb
-index c5cbfcf64c..4d01f6fab8 100644
+index d9b3ee354b0..faf356250fd 100644
 --- a/config/environments/production.rb
 +++ b/config/environments/production.rb
-@@ -70,10 +70,10 @@ Rails.application.configure do
+@@ -69,10 +69,10 @@
  
    config.action_mailer.delivery_method = :sendmail
    # Defaults to:
@@ -18,10 +18,10 @@ index c5cbfcf64c..4d01f6fab8 100644
    config.action_mailer.raise_delivery_errors = true
  
 diff --git a/config/gitlab.yml.example b/config/gitlab.yml.example
-index bd696a7f2c..44e3863736 100644
+index 102d24b1edd..e863923a926 100644
 --- a/config/gitlab.yml.example
 +++ b/config/gitlab.yml.example
-@@ -590,7 +590,7 @@ production: &base
+@@ -1145,7 +1145,7 @@ production: &base
    # CAUTION!
    # Use the default values unless you really know what you are doing
    git:
@@ -31,19 +31,19 @@ index bd696a7f2c..44e3863736 100644
    ## Webpack settings
    # If enabled, this will tell rails to serve frontend assets from the webpack-dev-server running
 diff --git a/config/initializers/1_settings.rb b/config/initializers/1_settings.rb
-index 0bea8a4f4b..290248547b 100644
+index cb37c4c586e..f9b8b700420 100644
 --- a/config/initializers/1_settings.rb
 +++ b/config/initializers/1_settings.rb
-@@ -255,7 +255,7 @@ Settings.gitlab['user']       ||= 'git'
- Settings.gitlab['user_home']  ||= begin
+@@ -177,7 +177,7 @@
+ Settings.gitlab['user_home'] ||= begin
    Etc.getpwnam(Settings.gitlab['user']).dir
- rescue ArgumentError # no user configured
--  '/home/' + Settings.gitlab['user']
-+  '/homeless-shelter'
+                                  rescue ArgumentError # no user configured
+-                                   '/home/' + Settings.gitlab['user']
++                                   '/homeless-shelter'
  end
  Settings.gitlab['time_zone'] ||= nil
  Settings.gitlab['signup_enabled'] ||= true if Settings.gitlab['signup_enabled'].nil?
-@@ -507,7 +507,7 @@ Settings.backup['upload']['storage_class'] ||= nil
+@@ -729,7 +729,7 @@
  # Git
  #
  Settings['git'] ||= Settingslogic.new({})
@@ -53,23 +53,36 @@ index 0bea8a4f4b..290248547b 100644
  # Important: keep the satellites.path setting until GitLab 9.0 at
  # least. This setting is fed to 'rm -rf' in
 diff --git a/lib/api/api.rb b/lib/api/api.rb
-index e953f3d2ec..3a8d9f076b 100644
+index 358967c72d2..3073ae90741 100644
 --- a/lib/api/api.rb
 +++ b/lib/api/api.rb
-@@ -2,7 +2,7 @@ module API
-   class API < Grape::API
+@@ -4,7 +4,7 @@ module API
+   class API < ::API::Base
      include APIGuard
  
 -    LOG_FILENAME = Rails.root.join("log", "api_json.log")
 +    LOG_FILENAME = File.join(ENV["GITLAB_LOG_PATH"], "api_json.log")
  
-     NO_SLASH_URL_PART_REGEX = %r{[^/]+}
-     PROJECT_ENDPOINT_REQUIREMENTS = { id: NO_SLASH_URL_PART_REGEX }.freeze
+     NO_SLASH_URL_PART_REGEX = %r{[^/]+}.freeze
+     NAMESPACE_OR_PROJECT_REQUIREMENTS = { id: NO_SLASH_URL_PART_REGEX }.freeze
+diff --git a/lib/gitlab/authorized_keys.rb b/lib/gitlab/authorized_keys.rb
+index 50cd15b7a10..3ac89e5b8e9 100644
+--- a/lib/gitlab/authorized_keys.rb
++++ b/lib/gitlab/authorized_keys.rb
+@@ -157,7 +157,7 @@ def command(id)
+         raise KeyError, "Invalid ID: #{id.inspect}"
+       end
+ 
+-      "#{File.join(Gitlab.config.gitlab_shell.path, 'bin', 'gitlab-shell')} #{id}"
++      "#{File.join('/run/current-system/sw/bin', 'gitlab-shell')} #{id}"
+     end
+ 
+     def strip(key)
 diff --git a/lib/gitlab/logger.rb b/lib/gitlab/logger.rb
-index a42e312b5d..ccaab9229e 100644
+index 89a4e36a232..e4d2a00832f 100644
 --- a/lib/gitlab/logger.rb
 +++ b/lib/gitlab/logger.rb
-@@ -26,7 +26,7 @@ module Gitlab
+@@ -37,7 +37,7 @@ def self.build
      end
  
      def self.full_log_path
@@ -79,10 +92,10 @@ index a42e312b5d..ccaab9229e 100644
  
      def self.cache_key
 diff --git a/lib/gitlab/uploads_transfer.rb b/lib/gitlab/uploads_transfer.rb
-index 7d7400bdab..cb25211d44 100644
+index e0e7084e27e..19fab855b90 100644
 --- a/lib/gitlab/uploads_transfer.rb
 +++ b/lib/gitlab/uploads_transfer.rb
-@@ -1,7 +1,7 @@
+@@ -3,7 +3,7 @@
  module Gitlab
    class UploadsTransfer < ProjectTransfer
      def root_dir
@@ -92,10 +105,10 @@ index 7d7400bdab..cb25211d44 100644
    end
  end
 diff --git a/lib/system_check/app/log_writable_check.rb b/lib/system_check/app/log_writable_check.rb
-index 3e0c436d6e..28cefc5514 100644
+index 2c108f0c18d..3a16ff52d01 100644
 --- a/lib/system_check/app/log_writable_check.rb
 +++ b/lib/system_check/app/log_writable_check.rb
-@@ -21,7 +21,7 @@ module SystemCheck
+@@ -23,7 +23,7 @@ def show_error
        private
  
        def log_path
@@ -105,10 +118,10 @@ index 3e0c436d6e..28cefc5514 100644
      end
    end
 diff --git a/lib/system_check/app/uploads_directory_exists_check.rb b/lib/system_check/app/uploads_directory_exists_check.rb
-index 7026d0ba07..c56e1f7ed9 100644
+index 54dff63ab61..666b7736629 100644
 --- a/lib/system_check/app/uploads_directory_exists_check.rb
 +++ b/lib/system_check/app/uploads_directory_exists_check.rb
-@@ -4,12 +4,13 @@ module SystemCheck
+@@ -6,12 +6,13 @@ class UploadsDirectoryExistsCheck < SystemCheck::BaseCheck
        set_name 'Uploads directory exists?'
  
        def check?
@@ -123,12 +136,12 @@ index 7026d0ba07..c56e1f7ed9 100644
 +            "sudo -u #{gitlab_user} mkdir #{uploads_dir}"
          )
          for_more_information(
-           see_installation_guide_section 'GitLab'
+           see_installation_guide_section('GitLab')
 diff --git a/lib/system_check/app/uploads_path_permission_check.rb b/lib/system_check/app/uploads_path_permission_check.rb
-index 7df6c06025..bb447c16b2 100644
+index 2e1cc687c43..ca69d63bcf6 100644
 --- a/lib/system_check/app/uploads_path_permission_check.rb
 +++ b/lib/system_check/app/uploads_path_permission_check.rb
-@@ -25,7 +25,7 @@ module SystemCheck
+@@ -27,7 +27,7 @@ def show_error
        private
  
        def rails_uploads_path
@@ -138,10 +151,10 @@ index 7df6c06025..bb447c16b2 100644
  
        def uploads_fullpath
 diff --git a/lib/system_check/app/uploads_path_tmp_permission_check.rb b/lib/system_check/app/uploads_path_tmp_permission_check.rb
-index b276a81eac..070e3ebd81 100644
+index 567c7540777..29906b1c132 100644
 --- a/lib/system_check/app/uploads_path_tmp_permission_check.rb
 +++ b/lib/system_check/app/uploads_path_tmp_permission_check.rb
-@@ -33,7 +33,7 @@ module SystemCheck
+@@ -35,7 +35,7 @@ def upload_path_tmp
        end
  
        def uploads_fullpath
@@ -150,14 +163,6 @@ index b276a81eac..070e3ebd81 100644
        end
      end
    end
---- a/lib/gitlab/authorized_keys.rb
-+++ b/lib/gitlab/authorized_keys.rb
-@@ -157,7 +157,7 @@
-         raise KeyError, "Invalid ID: #{id.inspect}"
-       end
- 
--      "#{File.join(Gitlab.config.gitlab_shell.path, 'bin', 'gitlab-shell')} #{id}"
-+      "#{File.join('/run/current-system/sw/bin', 'gitlab-shell')} #{id}"
-     end
- 
-     def strip(key)
+-- 
+2.28.0
+
